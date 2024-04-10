@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delivery Tracking</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+            margin: 0;
+        }
+        h2 {
+            color: #333;
+        }
+        #deliveryStatus {
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .status-entry {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 20px;
+        }
+        .status-entry:before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            height: 100%;
+            width: 2px;
+            background-color: #ccc;
+            z-index: 1;
+        }
+        .status-entry:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 5px;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background-color: #0056b3;
+            z-index: 2;
+        }
+        .status-entry:last-of-type:before {
+            display: none;
+        }
+        .status-entry:last-of-type:after {
+            animation: pulse 2s infinite;
+            background-color: #007bff;
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+            }
+        }
+        .status-label {
+            font-weight: bold;
+            color: #0056b3;
+        }
+        .time-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h2>Delivery Status History</h2>
+    <div id="deliveryStatus"></div>
+    <label for="trackingIdInput">Enter Tracking ID:</label>
+    <input type="text" id="trackingIdInput">
+    <button onclick="trackDelivery()">Track</button>
+
+    <script>
+        function trackDelivery() {
+            const trackingId = document.getElementById('trackingIdInput').value.trim();
+            if (!trackingId) {
+                alert('Please enter a tracking ID.');
+                return;
+            }
+
+            const evtSource = new EventSource(`http://localhost:3000/track-delivery/${trackingId}`);
+            let allHistory = [];
+            evtSource.onmessage = function(event) {
+                const newHistory = JSON.parse(event.data);
+                allHistory = allHistory.concat(newHistory);
+
+                const formattedHistory = allHistory.map((entry, index)=> `
+                    <div class="status-entry">
+                        <div class="status-label">${entry.status}</div>
+                        <div class="time-label">${entry.time}</div>
+                    </div>
+                `).join('');
+
+                document.getElementById('deliveryStatus').innerHTML = formattedHistory;
+            }
+        }
+    </script>
+   
+</body>
+</html>
